@@ -12,10 +12,6 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.errors.DefaultProductionExceptionHandler;
 import org.apache.kafka.streams.errors.LogAndContinueExceptionHandler;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.ValueJoiner;
 
 import java.util.Properties;
 
@@ -69,16 +65,8 @@ public class StreamsApp {
 
     static Topology createTopology() {
         final StreamsBuilder builder = new StreamsBuilder();
-        KStream<String, String> eventsStream = builder.stream("events");
-        KTable<String, String> usersKTable = builder.table("users", Materialized.as("USERS"));
 
-        eventsStream.leftJoin(usersKTable, (ValueJoiner<String, String, Object>) (event, user) -> {
-            if (user == null) {
-                log.error("User not found : {}", event);
-                return null;
-            }
-            return "User " + user + " sent " + event;
-        }).filter((key, value) -> value != null).to("output");
+        // TODO: join users and messages
 
         return builder.build();
     }

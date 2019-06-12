@@ -6,7 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="Dojo2018" />
+        <module name="Dojo2019" />
         <module name="day1" />
         <module name="codingdojo2018" />
       </profile>
