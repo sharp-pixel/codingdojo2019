@@ -6,13 +6,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.errors.DefaultProductionExceptionHandler;
 import org.apache.kafka.streams.errors.LogAndContinueExceptionHandler;
+import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.JoinWindows;
+import org.apache.kafka.streams.kstream.Joined;
+import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.state.KeyValueStore;
 
+import java.time.Duration;
 import java.util.Properties;
 
 @Slf4j
@@ -66,7 +76,36 @@ public class StreamsApp {
     static Topology createTopology() {
         final StreamsBuilder builder = new StreamsBuilder();
 
-        // TODO: join users and messages
+        final Serdes.StringSerde stringSerde = new Serdes.StringSerde();
+        final KStream<String, String> users = builder.stream("users", Consumed.with(stringSerde, stringSerde));
+        final KStream<String, String> events = builder.stream("events", Consumed.with(stringSerde, stringSerde));
+
+        final KStream<String, String> joinedStream = events.join(
+                users,
+                (event, user) -> "User " + user + " sent " + event,
+                JoinWindows.of(Duration.ofSeconds(5)),
+                Joined.with(stringSerde, stringSerde, stringSerde)
+        );
+
+        joinedStream.to("output", Produced.with(stringSerde, stringSerde));
+
+        return builder.build();
+    }
+
+    static Topology createTopology2() {
+        final StreamsBuilder builder = new StreamsBuilder();
+
+        final Serdes.StringSerde stringSerde = new Serdes.StringSerde();
+        final KTable<String, String> users = builder.table("users", Consumed.with(stringSerde, stringSerde), Materialized.<String, String, KeyValueStore<Bytes, byte[]>>as("events").withKeySerde(stringSerde).withValueSerde(stringSerde));
+        final KStream<String, String> events = builder.stream("events", Consumed.with(stringSerde, stringSerde));
+
+        final KStream<String, String> joinedStream = events.leftJoin(
+                users,
+                (event, user) -> "User " + user + " sent " + event,
+                Joined.with(stringSerde, stringSerde, stringSerde)
+        );
+
+        joinedStream.to("output", Produced.with(stringSerde, stringSerde));
 
         return builder.build();
     }

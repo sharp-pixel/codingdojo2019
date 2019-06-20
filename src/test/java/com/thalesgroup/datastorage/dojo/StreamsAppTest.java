@@ -42,4 +42,33 @@ public class StreamsAppTest {
         // Then
         OutputVerifier.compareValue(producerRecord, "User user sent event");
     }
+
+    @Test
+    public void createTopology2() {
+        // Given
+        Topology topology = StreamsApp.createTopology2();
+        Properties props = new Properties();
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "test");
+        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "dummy:9092");
+        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+        props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+
+        // When
+        ProducerRecord<String, String> producerRecord;
+        try (TopologyTestDriver driver = new TopologyTestDriver(topology, props);
+             Serde<String> serde = new Serdes.StringSerde()
+        ) {
+
+            ConsumerRecordFactory<String, String> eventsFactory = new ConsumerRecordFactory<>("events", serde.serializer(), serde.serializer());
+            ConsumerRecordFactory<String, String> usersFactory = new ConsumerRecordFactory<>("users", serde.serializer(), serde.serializer());
+
+            driver.pipeInput(usersFactory.create("users", "key_0", "user"));
+            driver.pipeInput(eventsFactory.create("events", "key_0", "event"));
+
+            producerRecord = driver.readOutput("output", serde.deserializer(), serde.deserializer());
+        }
+
+        // Then
+        OutputVerifier.compareValue(producerRecord, "User user sent event");
+    }
 }
