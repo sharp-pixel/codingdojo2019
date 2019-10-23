@@ -123,13 +123,15 @@ services:
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       KAFKA_JMX_PORT: 5555
       # KAFKA_JMX_OPTS: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.rmi.port=5555"
+    volumes:
+      - ./mysql-connector-java-8.0.18.jar:/usr/share/java/kafka-connect-jdbc/mysql-connector-java-8.0.18.jar
+      - ./kafka-connect-twitter/:/usr/share/java/kafka-connect-twitter
     networks:
       - kafka
       - zookeeper
       - cassandra
       - elastic
       - mysql
-      - monitoring
 
   kafka-init:
     image: confluentinc/cp-enterprise-kafka:$CONFLUENT_VERSION
@@ -152,25 +154,6 @@ services:
       - kafka
       - zookeeper
 
-  cassandra:
-    image: cassandra:3.11.4
-    hostname: cassandra
-    container_name: cassandra
-    environment:
-      # JVM_OPTS: "-Xms512M -Xmx512M"
-      MAX_HEAP_SIZE: 128M
-      HEAP_NEWSIZE: 24M
-    cap_add:
-      - IPC_LOCK
-    ulimits:
-      memlock: -1
-    ports:
-      - "9042:9042"
-      - "9142:9042"
-    networks:
-      - cassandra
-      - monitoring
-
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:$ELASTIC_VERSION
     hostname: elasticsearch
@@ -187,18 +170,17 @@ services:
       - "9200:9200"
     networks:
       - elastic
-      - monitoring
 
-  apm:
-    image: docker.elastic.co/apm/apm-server:$ELASTIC_VERSION
-    hostname: apm
-    container_name: apm
-    ports:
-      - "8200:8200"
-    volumes:
-      - ./apm-server.yml:/usr/share/apm-server/apm-server.yml
-    networks:
-      - elastic
+  #  apm:
+  #    image: docker.elastic.co/apm/apm-server:$ELASTIC_VERSION
+  #    hostname: apm
+  #    container_name: apm
+  #    ports:
+  #      - "8200:8200"
+  #    volumes:
+  #      - ./apm-server.yml:/usr/share/apm-server/apm-server.yml
+  #    networks:
+  #      - elastic
 
   kibana:
     image: docker.elastic.co/kibana/kibana:$ELASTIC_VERSION
@@ -217,13 +199,13 @@ services:
     container_name: mysql
     environment:
       MYSQL_USER: dojo
-      MYSQL_PASSWORD: dojo2018
-      MYSQL_ROOT_PASSWORD: dojo2018
+      MYSQL_PASSWORD: dojo2019
+      MYSQL_ROOT_PASSWORD: dojo2019
     networks:
       - mysql
 
   sonar:
-    image: sonarqube:7.7-community
+    image: sonarqube:7.9-community
     hostname: sonar
     container_name: sonar
     ports:
